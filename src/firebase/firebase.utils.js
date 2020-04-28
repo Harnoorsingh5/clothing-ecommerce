@@ -13,6 +13,32 @@ const config = {
     measurementId: "G-N6VG61M1Z6"
   };
 
+//API request to firebase (it is asynchronous - so it is a async() call)
+export const createUserProfileDocument = async(userAuth, additionalData) => {
+  if(!userAuth) return;
+
+  const userRef = firestore.doc(`users/${userAuth.uid}`);
+  const snapShot = await userRef.get();
+  // console.log(snapShot);
+
+  if(!snapShot.exists){
+    const{displayName, email} = userAuth;
+    const createdAt = new Date();
+    try{
+      await userRef.set
+      ({
+        displayName,
+        email,
+        createdAt,
+        ...additionalData
+      })
+    }
+    catch(error){
+      console.log("Error creating user",error);
+    }
+  }
+}
+
 firebase.initializeApp(config);
 
 export const auth = firebase.auth();
