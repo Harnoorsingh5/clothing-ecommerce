@@ -6,6 +6,8 @@ import {Switch, Route} from 'react-router-dom';
 import Header from './components/header/header.component.jsx';
 import SignInAndSignUpPage from './pages/sign-in-and-sign-up/sign-in-and-sign-up.component.jsx'
 import { auth, createUserProfileDocument } from './firebase/firebase.utils';
+import {connect} from 'react-redux';
+import {setCurrentUser} from './redux/user/user.actions';
 
 const HatsPage = () => (
   <div>
@@ -36,33 +38,34 @@ const MensPage = () => (
 // moment that route inside switch matches it does not renders anything else
 // it gives control over code; more security in terms it will only opn that particular link 
 class App extends React.Component{
-  
-  constructor(){
-    super();
+  /*
+      no need of this constructor as we hvae introduced redux
+  */
+  // constructor(){ 
+  //   super();
 
-    this.state = {
-      currentUser: null,
-    }
-  }
+  //   this.state = {
+  //     currentUser: null,
+  //   }
+  // }
 
   unsubscribeFromAuth = null;
 
   componentDidMount() {
+    const {setCurrentUser} = this.props;
     this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
       if (this.userAuth) {
         const userRef = await createUserProfileDocument(userAuth);
 
         userRef.onSnapshot(snapShot => {
-          this.setState({
-            currentUser: {
+          setCurrentUser({
               id: snapShot.id,
               ...snapShot.data()
-            }
-          });
+            });
         });
       }
 
-      this.setState({ currentUser: userAuth });
+      setCurrentUser({ userAuth });
     });
   }
 
@@ -74,7 +77,7 @@ class App extends React.Component{
   render(){
     return (
       <div>
-        <Header currentUser={this.state.currentUser}/>
+        <Header/>
         <Switch> 
           <Route exact path='/' component={HomePage}/>
           <Route path='/shop' component={ShopPage}/>
@@ -90,4 +93,8 @@ class App extends React.Component{
   }
 }
 
-export default App;
+const mapDispatchToProps = (dispatch) => ({
+  setCurrentUser: user => dispatch(setCurrentUser(user))
+});
+
+export default connect(null, mapDispatchToProps)(App);
