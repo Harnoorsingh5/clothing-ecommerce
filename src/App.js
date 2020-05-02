@@ -2,7 +2,7 @@ import React from 'react';
 import './App.css';
 import HomePage from './pages/homepage/homepage.component.jsx';
 import ShopPage from './pages/shoppage/shoppage.component.jsx';
-import {Switch, Route} from 'react-router-dom';
+import {Switch, Route, Redirect} from 'react-router-dom';
 import Header from './components/header/header.component.jsx';
 import SignInAndSignUpPage from './pages/sign-in-and-sign-up/sign-in-and-sign-up.component.jsx'
 import { auth, createUserProfileDocument } from './firebase/firebase.utils';
@@ -52,27 +52,32 @@ class App extends React.Component{
   unsubscribeFromAuth = null;
 
   componentDidMount() {
-    const {setCurrentUser} = this.props;
+    const { setCurrentUser } = this.props;
+
     this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
       if (this.userAuth) {
+        // console.log(userAuth);
+        // console.log(this.userAuth);
         const userRef = await createUserProfileDocument(userAuth);
 
         userRef.onSnapshot(snapShot => {
           setCurrentUser({
-              id: snapShot.id,
-              ...snapShot.data()
-            });
+            id: snapShot.id,
+            ...snapShot.data()
+          });
         });
-      }
-
-      setCurrentUser({ userAuth });
+      }else{
+        setCurrentUser(userAuth);
+       }
     });
+    // console.log(this.unsubscribeFromAuth);
   }
 
   componentWillUnmount() {
-    // this.unsubscribeFromAuth();
+    
     this.unsubscribeFromAuth=null;
   }
+
 
   render(){
     return (
@@ -86,15 +91,30 @@ class App extends React.Component{
           <Route path='/shop/sneakers' component={SneakersPage}/>
           <Route path='/shop/womens' component={WomensPage}/>
           <Route path='/shop/mens' component={MensPage}/>
-          <Route path='/signin' component={SignInAndSignUpPage}/>
+          <Route
+            exact
+            path='/signin'
+            render={() =>
+              this.props.currentUser ? (
+                <Redirect to='/' />
+              ) : (
+                <SignInAndSignUpPage />
+              )
+            }
+          />
         </Switch>
       </div>
-    )
+    );
   }
 }
+
+
+const mapStateToProps = ({ user }) => ({
+  currentUser: user.currentUser
+});
 
 const mapDispatchToProps = (dispatch) => ({
   setCurrentUser: user => dispatch(setCurrentUser(user))
 });
 
-export default connect(null, mapDispatchToProps)(App);
+export default connect(mapStateToProps, mapDispatchToProps)(App);
